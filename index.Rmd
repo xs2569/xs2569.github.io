@@ -1,0 +1,32 @@
+---
+title: "My awesome website"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cerulean
+---
+
+name: "Xun Sun"
+output_dir: "."
+navbar:
+  title: "Xun Sun"
+  left:
+    - text: "Home"
+      href: index.html
+    - text: "Resume"
+      href: resume.html
+  right:
+    - icon: fa-github fa-lg
+      href: https://github.com/your_github_username
+    - icon: fa-envelope fa-lg
+      href: mailto:your.email@example.com
+    - icon: fa-linkedin fa-lg
+      href: https://www.linkedin.com/in/your_linkedin
+output:
+  html_document:
+    theme: cosmo
+    highlight: textmate
+    css: assets/css/styles.css
+    includes:
+      after_body: _layouts/footer.html
