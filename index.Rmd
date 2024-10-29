@@ -18,14 +18,15 @@ navbar:
       href: resume.html
   right:
     - icon: fa-github fa-lg
-      href: https://github.com/your_github_username
+      href: https://github.com/xs2569
     - icon: fa-envelope fa-lg
-      href: mailto:your.email@example.com
+      href: mailto:xunsun800@gmail.com
     - icon: fa-linkedin fa-lg
-      href: https://www.linkedin.com/in/your_linkedin
+      href: www.linkedin.com/in/xun-sun-serena
+
 output:
   html_document:
-    theme: cosmo
+    theme: cerulean
     highlight: textmate
     css: assets/css/styles.css
     includes:
