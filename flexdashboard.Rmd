@@ -1,6 +1,5 @@
-
 ---
-title: "New York Weather Analysis Dashboard"
+title: "dashbaord"
 output: 
   flexdashboard::flex_dashboard:
     orientation: columns
@@ -13,173 +12,170 @@ library(tidyverse)
 library(plotly)
 library(p8105.datasets)
 library(lubridate)
-library(rnoaa)
 library(dplyr)
-
-# Load and process NOAA data
-data("ny_noaa")
-
+library(httr)
+library(jsonlite)
+library(stringr)
 ```
 
 
-
-### Temperature Distribution by Month
 ```{r}
-# Load and process NOAA data
-data("ny_noaa")
-# Get a list of all NY station IDs
-stations <- ghcnd_stations()
-nystationids <-  stations %>% 
-  filter(state == "NY") %>% 
-  distinct(id)
-# Get a list of all NY station IDs
-stations <- ghcnd_stations()
-nystationids <-  stations %>% 
-  filter(state == "NY") %>% 
-  distinct(id)
+get_all_inspections = function(url) {
+  
+  all_inspections = vector("list", length = 0)
+  
+  loop_index = 1
+  chunk_size = 50000
+  DO_NEXT = TRUE
+  
+  while (DO_NEXT) {
+    message("Getting data, page ", loop_index)
+    
+    all_inspections[[loop_index]] = 
+      GET(url,
+          query = list(`$order` = "zipcode",
+                       `$limit` = chunk_size,
+                       `$offset` = as.integer((loop_index - 1) * chunk_size)
+                       )
+          ) %>%
+      content("text") %>%
+      fromJSON() %>%
+      as_tibble()
+    
+    DO_NEXT = dim(all_inspections[[loop_index]])[1] == chunk_size
+    loop_index = loop_index + 1
+  }
+  
+  all_inspections
+  
+}
 
-# Pull the desired weather data for all of these stations
-nydat <- meteo_pull_monitors(nystationids$id, 
-                             date_min = "1981-01-01", 
-                             date_max = "2010-12-31", 
-                             var = c("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
+url = "https://data.cityofnewyork.us/resource/43nn-pn8j.json"
 
-# Save the resulting data
-save(nystationids, nydat, file = "nynoaadat.RData")
+nyc_inspections = 
+  get_all_inspections(url) %>%
+  bind_rows() 
+```
+
+```{r}
+view(nyc_inspections)
 
 ```
 
-
-
-```{r setup, include=FALSE}
-library(flexdashboard)
-library(tidyverse)
-library(plotly)
-library(lubridate)
-
-# Load the data
-data("ny_noaa")
-
-# Clean and process data
-nydat_clean <- nydat %>%
-  # Convert date
+```{r}
+# Clean and prepare data
+rest_clean <- nyc_inspections %>%
+  drop_na() |>
   mutate(
-    date = as.Date(date),
-    year = year(date),
-    month = month(date, label = TRUE)
+    inspection_date = as.Date(inspection_date),
+    year = year(inspection_date),
+    month = month(inspection_date, label = TRUE),
+    cuisine = str_to_title(cuisine_description)
   ) %>%
-  # Convert units
-  mutate(
-    prcp = as.numeric(prcp) / 10,  # convert to mm
-    tmax = as.numeric(tmax) / 10,  # convert to Celsius
-    tmin = as.numeric(tmin) / 10,  # convert to Celsius
-    snow = as.numeric(snow),       # already in mm
-    snwd = as.numeric(snwd)        # already in mm
-  ) %>%
-  # Filter for recent years and complete cases
+  # Filter for recent years and common cuisines
   filter(
-    year >= 2000,
-    !is.na(tmax),
-    !is.na(tmin)
+    year >= 2014,
+    cuisine %in% (
+      rest_inspec %>%
+      count(cuisine_description) %>%
+      top_n(10, n) %>%
+      pull(cuisine_description)
+    )
   ) %>%
-  # Sample data for better performance
-  sample_n(10000)
+  # Sample for better performance
+  sample_n(1000)
 
-# Calculate monthly averages
-monthly_avg <- nydat_clean %>%
-  group_by(month) %>%
+# Calculate cuisine summaries
+cuisine_summary <- rest_clean %>%
+  group_by(cuisine) %>%
   summarise(
-    avg_tmax = mean(tmax, na.rm = TRUE),
-    avg_tmin = mean(tmin, na.rm = TRUE),
-    avg_prcp = mean(prcp, na.rm = TRUE),
-    avg_snow = mean(snow, na.rm = TRUE)
-  )
+    avg_score = mean(score, na.rm = TRUE),
+    n_inspections = n(),
+    pct_a = mean(grade == "A") * 100,
+    n_critical = sum(critical_flag == "Critical", na.rm = TRUE)
+  ) %>%
+  arrange(desc(n_inspections))
 
-# Calculate seasonal patterns
-seasonal_data <- nydat_clean %>%
-  group_by(month) %>%
+# Violation patterns
+violation_patterns <- rest_clean %>%
+  group_by(violation_code, violation_description) %>%
   summarise(
-    snow_days = sum(!is.na(snow) & snow > 0, na.rm = TRUE),
-    rain_days = sum(!is.na(prcp) & prcp > 0, na.rm = TRUE),
-    total_precip = sum(prcp, na.rm = TRUE)
-  )
+    count = n(),
+    avg_score = mean(score, na.rm = TRUE),
+    pct_critical = mean(critical_flag == "Critical", na.rm = TRUE) * 100
+  ) %>%
+  arrange(desc(count)) %>%
+  head(15)
 ```
 
-Row {data-height=600}
+Column {data-width=650}
 -----------------------------------------------------------------------
-
-### Temperature Patterns Across Months
+### Inspection Scores by Cuisine Type
 
 ```{r}
-plot_ly(nydat_clean, x = ~month) %>%
-  add_boxplot(y = ~tmax, name = "Maximum Temperature",
-              color = I("#1f77b4"),
-              boxpoints = "outliers") %>%
-  add_boxplot(y = ~tmin, name = "Minimum Temperature",
-              color = I("#ff7f0e"),
-              boxpoints = "outliers") %>%
+plot_ly(rest_clean, x = ~cuisine, y = ~score, type = "box",
+        color = ~grade,
+        colors = c("A" = "#2ecc71", "B" = "#f1c40f", "C" = "#e74c3c"),
+        boxpoints = "outliers") %>%
   layout(
-    title = "Monthly Temperature Distribution",
-    yaxis = list(title = "Temperature (°C)"),
-    xaxis = list(title = "Month"),
+    title = "Distribution of Inspection Scores by Cuisine",
+    xaxis = list(title = "Cuisine Type",
+                 tickangle = 45),
+    yaxis = list(title = "Inspection Score",
+                 autorange = "reversed"),
     showlegend = TRUE,
-    boxmode = "group"
+    margin = list(b = 100)
   )
 ```
 
-Row {data-height=400}
+Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Precipitation vs Temperature
+### Grade Distribution Over Time
 
 ```{r}
-plot_ly(nydat_clean, x = ~tmax, y = ~prcp, type = 'scatter', mode = 'markers',
-        marker = list(
-          size = 6,
-          color = ~month,
-          colorscale = 'Viridis',
-          showscale = TRUE
-        ),
-        hovertemplate = paste(
-          "<b>Date</b>: %{text}<br>",
-          "Max Temp: %{x:.1f}°C<br>",
-          "Precip: %{y:.1f}mm<br>",
-          "<extra></extra>"
-        ),
-        text = ~date) %>%
-  layout(
-    title = "Temperature vs Precipitation Relationship",
-    xaxis = list(title = "Maximum Temperature (°C)"),
-    yaxis = list(title = "Precipitation (mm)"),
-    coloraxis = list(colorbar = list(title = "Month"))
-  )
-```
+monthly_grades <- rest_clean %>%
+  group_by(year, month, grade) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  mutate(date = as.Date(paste(year, as.numeric(month), "01"), format = "%Y %m %d"))
 
-### Seasonal Weather Patterns
-
-```{r}
-plot_ly(seasonal_data) %>%
-  add_trace(
-    x = ~month,
-    y = ~snow_days,
-    type = 'bar',
-    name = 'Snow Days',
-    marker = list(color = '#1f77b4')
-  ) %>%
-  add_trace(
-    x = ~month,
-    y = ~rain_days,
-    type = 'bar',
-    name = 'Rain Days',
-    marker = list(color = '#2ca02c')
-  ) %>%
+plot_ly(monthly_grades, x = ~date, y = ~count, color = ~grade,
+        colors = c("A" = "#2ecc71",   
+                  "B" = "#f1c40f",    
+                  "C" = "#e74c3c",    
+                  "P" = "#9b59b6",    
+                  "Z" = "#95a5a6"),   
+        type = 'scatter', 
+        mode = 'lines+markers') %>%  
   layout(
-    barmode = 'group',
-    title = 'Monthly Distribution of Snow and Rain Days',
-    xaxis = list(title = 'Month'),
-    yaxis = list(title = 'Number of Days'),
+    title = "Restaurant Grades Over Time",
+    xaxis = list(title = "Date"),
+    yaxis = list(title = "Number of Restaurants"),
     showlegend = TRUE
   )
 ```
 
+### Top Violation Types
 
+```{r}
+plot_ly(violation_patterns, 
+        x = ~reorder(str_trunc(violation_description, 30), count),
+        y = ~count,
+        type = 'bar',
+        marker = list(
+          color = ~avg_score,
+          colorscale = 'RdYlBu',
+          reversescale = TRUE
+        ),
+        text = ~paste("Avg Score:", round(avg_score, 1),
+                     "\nCritical:", round(pct_critical, 1), "%"),
+        hoverinfo = "text") %>%
+  layout(
+    title = "Most Common Violations",
+    xaxis = list(title = "",
+                 tickangle = 45),
+    yaxis = list(title = "Number of Violations"),
+    showlegend = FALSE,
+    margin = list(b = 120)
+  )
+```
