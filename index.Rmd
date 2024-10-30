@@ -1,33 +1,21 @@
 ---
-title: "My awesome website"
-output: 
-  html_document:
-    toc: true
-    toc_float: true
-    theme: cerulean
+title: "Welcome!"
 ---
 
-name: "Xun Sun"
-output_dir: "."
-navbar:
-  title: "Xun Sun"
-  left:
-    - text: "Home"
-      href: index.html
-    - text: "Resume"
-      href: resume.html
-  right:
-    - icon: fa-github fa-lg
-      href: https://github.com/xs2569
-    - icon: fa-envelope fa-lg
-      href: mailto:xunsun800@gmail.com
-    - icon: fa-linkedin fa-lg
-      href: www.linkedin.com/in/xun-sun-serena
+## About Me
 
-output:
-  html_document:
-    theme: cerulean
-    highlight: textmate
-    css: assets/css/styles.css
-    includes:
-      after_body: _layouts/footer.html
+Hello! I'm Xun Sun, a MS of Columbia University in Biostatistics. 
+
+
+### Education
+
+* Columbia University    Master of science, Biostatistics
+* Beijing University of Technology   Bachelor of science, Economic Statistics GPA: 3.88 
+
+
+### Contact
+
+Feel free to reach out to me at [xunsun800@gmail.com](mailto:xunsun800@gmail.com) or connect with me on [LinkedIn](https://www.linkedin.com/in/xun-sun-serena).
+
+
+### Image

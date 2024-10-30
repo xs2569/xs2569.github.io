@@ -1,0 +1,185 @@
+
+---
+title: "New York Weather Analysis Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(p8105.datasets)
+library(lubridate)
+library(rnoaa)
+library(dplyr)
+
+# Load and process NOAA data
+data("ny_noaa")
+
+```
+
+
+
+### Temperature Distribution by Month
+```{r}
+# Load and process NOAA data
+data("ny_noaa")
+# Get a list of all NY station IDs
+stations <- ghcnd_stations()
+nystationids <-  stations %>% 
+  filter(state == "NY") %>% 
+  distinct(id)
+# Get a list of all NY station IDs
+stations <- ghcnd_stations()
+nystationids <-  stations %>% 
+  filter(state == "NY") %>% 
+  distinct(id)
+
+# Pull the desired weather data for all of these stations
+nydat <- meteo_pull_monitors(nystationids$id, 
+                             date_min = "1981-01-01", 
+                             date_max = "2010-12-31", 
+                             var = c("PRCP", "SNOW", "SNWD", "TMAX", "TMIN"))
+
+# Save the resulting data
+save(nystationids, nydat, file = "nynoaadat.RData")
+
+```
+
+
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(lubridate)
+
+# Load the data
+data("ny_noaa")
+
+# Clean and process data
+nydat_clean <- nydat %>%
+  # Convert date
+  mutate(
+    date = as.Date(date),
+    year = year(date),
+    month = month(date, label = TRUE)
+  ) %>%
+  # Convert units
+  mutate(
+    prcp = as.numeric(prcp) / 10,  # convert to mm
+    tmax = as.numeric(tmax) / 10,  # convert to Celsius
+    tmin = as.numeric(tmin) / 10,  # convert to Celsius
+    snow = as.numeric(snow),       # already in mm
+    snwd = as.numeric(snwd)        # already in mm
+  ) %>%
+  # Filter for recent years and complete cases
+  filter(
+    year >= 2000,
+    !is.na(tmax),
+    !is.na(tmin)
+  ) %>%
+  # Sample data for better performance
+  sample_n(10000)
+
+# Calculate monthly averages
+monthly_avg <- nydat_clean %>%
+  group_by(month) %>%
+  summarise(
+    avg_tmax = mean(tmax, na.rm = TRUE),
+    avg_tmin = mean(tmin, na.rm = TRUE),
+    avg_prcp = mean(prcp, na.rm = TRUE),
+    avg_snow = mean(snow, na.rm = TRUE)
+  )
+
+# Calculate seasonal patterns
+seasonal_data <- nydat_clean %>%
+  group_by(month) %>%
+  summarise(
+    snow_days = sum(!is.na(snow) & snow > 0, na.rm = TRUE),
+    rain_days = sum(!is.na(prcp) & prcp > 0, na.rm = TRUE),
+    total_precip = sum(prcp, na.rm = TRUE)
+  )
+```
+
+Row {data-height=600}
+-----------------------------------------------------------------------
+
+### Temperature Patterns Across Months
+
+```{r}
+plot_ly(nydat_clean, x = ~month) %>%
+  add_boxplot(y = ~tmax, name = "Maximum Temperature",
+              color = I("#1f77b4"),
+              boxpoints = "outliers") %>%
+  add_boxplot(y = ~tmin, name = "Minimum Temperature",
+              color = I("#ff7f0e"),
+              boxpoints = "outliers") %>%
+  layout(
+    title = "Monthly Temperature Distribution",
+    yaxis = list(title = "Temperature (°C)"),
+    xaxis = list(title = "Month"),
+    showlegend = TRUE,
+    boxmode = "group"
+  )
+```
+
+Row {data-height=400}
+-----------------------------------------------------------------------
+
+### Precipitation vs Temperature
+
+```{r}
+plot_ly(nydat_clean, x = ~tmax, y = ~prcp, type = 'scatter', mode = 'markers',
+        marker = list(
+          size = 6,
+          color = ~month,
+          colorscale = 'Viridis',
+          showscale = TRUE
+        ),
+        hovertemplate = paste(
+          "<b>Date</b>: %{text}<br>",
+          "Max Temp: %{x:.1f}°C<br>",
+          "Precip: %{y:.1f}mm<br>",
+          "<extra></extra>"
+        ),
+        text = ~date) %>%
+  layout(
+    title = "Temperature vs Precipitation Relationship",
+    xaxis = list(title = "Maximum Temperature (°C)"),
+    yaxis = list(title = "Precipitation (mm)"),
+    coloraxis = list(colorbar = list(title = "Month"))
+  )
+```
+
+### Seasonal Weather Patterns
+
+```{r}
+plot_ly(seasonal_data) %>%
+  add_trace(
+    x = ~month,
+    y = ~snow_days,
+    type = 'bar',
+    name = 'Snow Days',
+    marker = list(color = '#1f77b4')
+  ) %>%
+  add_trace(
+    x = ~month,
+    y = ~rain_days,
+    type = 'bar',
+    name = 'Rain Days',
+    marker = list(color = '#2ca02c')
+  ) %>%
+  layout(
+    barmode = 'group',
+    title = 'Monthly Distribution of Snow and Rain Days',
+    xaxis = list(title = 'Month'),
+    yaxis = list(title = 'Number of Days'),
+    showlegend = TRUE
+  )
+```
+
+

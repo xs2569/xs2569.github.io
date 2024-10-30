@@ -1,0 +1,43 @@
+---
+title: "Academic and Professional Experience"
+---
+
+## Education
+
+### Institution Name
+**Master of Science** | 09/2024 - 06/2026  
+* Biostatistics/Public Health Data Science  
+* Relevant coursework: Data Science, Probability, Survival Analysis, Principles of Epidemiology
+
+**Bachelor of Science** | 09/2019 - 06/2023   
+* Economic Statistics 
+* Relevant coursework: Econometrics, Operating Systems, Linear Algebra, Advanced Mathematics, Finance, Introduction to Marketing 
+
+## Professional Experience
+
+### Company/Institution Name
+**AVIC TRUST-Financial Risk Analyst - data science** | 12/2023 - 06/2024  Beijing, China  
+* Created a model for forecasting vintage delinquency by comparing the performance of 3 different methods (ARIMA, Arithmetic and Geometric Mean Recursive Method) with R, which is integrated into company's online dashboard for visual monitoring of future risks.   
+* Assessed quarterly risk reports on rule rejections, asset analysis, and model efficacy.  
+* Discovered an inverse effect in Loan Rejection Model where the delinquency rate of the model-selected cohort was 15% higher than the control group and improved at least 23% performance by utilizing the latest data with SQL and Python.  
+* Developed 3 bespoke predictive models utilizing the Random Forest algorithm with Python, enhancing asset profiling and automating delinquency analysis to reduce reliance on manual judgment and streamline decision-making processes.  
+
+ 
+## Skills
+
+### Technical Skills
+* Programming Languages: R, Python, etc.
+* Statistical Analysis
+* Data Visualization
+* Version Control (Git)
+
+### Soft Skills
+* Project Management
+* Team Leadership
+* Communication
+* Problem Solving
+
+
+## Awards & Honors
+* 2021&2022 BJUT Academic Excellence Scholarship
+* 2021 Best Contribution for School of Economics and Management

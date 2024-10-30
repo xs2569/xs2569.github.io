@@ -13,12 +13,8 @@ navbar:
     - icon: fa-envelope fa-lg
       href: mailto:xunsun800@gmail.com
     - icon: fa-linkedin fa-lg
-      href: www.linkedin.com/in/xun-sun-serena
+      href: https://www.linkedin.com/in/xun-sun-serena
 
 output:
   html_document:
-    theme: cerulean
-    highlight: textmate
-    css: assets/css/styles.css
-    includes:
-      after_body: _layouts/footer.html
+    theme: flatly  
