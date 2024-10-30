@@ -20,4 +20,4 @@ Feel free to reach out to me at [xunsun800@gmail.com](mailto:xunsun800@gmail.com
 
 ### A few plots
 
-- [Here's flexdashboard for hw4](flexdashboard.html)
+- [Here's flexdashboard for hw4](dashboard.html)
