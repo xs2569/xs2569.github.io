@@ -22,7 +22,7 @@ library(stringr)
 Column {data-width=650}
 -----------------------------------------------------------------------
 
-### Chart A
+### Distribution of Inspection Scores by Cuisine
 
 ```{r}
 get_all_inspections = function(url) {
@@ -124,7 +124,7 @@ plot_ly(rest_clean, x = ~cuisine, y = ~score, type = "box",
 Column {data-width=350}
 -----------------------------------------------------------------------
 
-### Chart B
+### Restaurant Grades Over Time
 
 ```{r}
 monthly_grades <- rest_clean %>%
@@ -148,7 +148,7 @@ plot_ly(monthly_grades, x = ~date, y = ~count, color = ~grade,
   )
 ```
 
-### Chart C
+### Number of Violations
 
 ```{r}
 plot_ly(violation_patterns, 
